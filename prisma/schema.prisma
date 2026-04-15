@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Student {
+  id            String       @id @default(cuid())
+  name          String
+  cf_handle     String       @unique
+  registered_at DateTime     @default(now())
+  submissions   Submission[]
+}
+
+model Contest {
+  id          String           @id @default(cuid())
+  start_time  DateTime
+  end_time    DateTime
+  status      ContestStatus    @default(PENDING)
+  problems    ContestProblem[]
+  submissions Submission[]
+  created_at  DateTime         @default(now())
+}
+
+model ContestProblem {
+  id            String  @id @default(cuid())
+  contest_id    String
+  contest       Contest @relation(fields: [contest_id], references: [id])
+  cf_problem_id String
+  problem_name  String
+  rating        Int
+  slot          String
+}
+
+model Submission {
+  id              String    @id @default(cuid())
+  contest_id      String
+  student_id      String
+  cf_problem_id   String
+  solved          Boolean   @default(false)
+  solved_at       DateTime?
+  last_checked_at DateTime  @default(now())
+  contest         Contest   @relation(fields: [contest_id], references: [id])
+  student         Student   @relation(fields: [student_id], references: [id])
+
+  @@unique([contest_id, student_id, cf_problem_id])
+}
+
+model UsedProblem {
+  id            String   @id @default(cuid())
+  cf_problem_id String   @unique
+  used_at       DateTime @default(now())
+}
+
+model AppSettings {
+  id              String @id @default("singleton")
+  b_rating_min    Int    @default(1200)
+  b_rating_max    Int    @default(1600)
+  c_rating_min    Int    @default(1400)
+  c_rating_max    Int    @default(1700)
+  poll_interval_s Int    @default(30)
+}
+
+enum ContestStatus {
+  PENDING
+  ACTIVE
+  ENDED
+}
