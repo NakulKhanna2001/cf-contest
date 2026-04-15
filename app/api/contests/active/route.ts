@@ -1,6 +1,28 @@
 import { prisma } from '@/lib/prisma'
 import { getContestStatus } from '@/lib/contest-time'
 
+function serializeContest(contest: {
+  id: string
+  start_time: Date
+  end_time: Date
+  status: string
+  created_at: Date
+  is_test: boolean
+  problems: {
+    id: string
+    contest_id: string
+    cf_problem_id: string
+    problem_name: string
+    rating: number
+    slot: string
+  }[]
+}) {
+  return {
+    ...contest,
+    problems: contest.status === 'ACTIVE' ? contest.problems : [],
+  }
+}
+
 // GET /api/contests/active — return the current active or upcoming contest
 export async function GET() {
   const contest = await prisma.contest.findFirst({
@@ -25,8 +47,10 @@ export async function GET() {
       include: { problems: { orderBy: { slot: 'asc' } } },
     })
 
-    return Response.json({ contest: updated.status === 'ENDED' ? null : updated })
+    return Response.json({
+      contest: updated.status === 'ENDED' ? null : serializeContest(updated),
+    })
   }
 
-  return Response.json({ contest })
+  return Response.json({ contest: serializeContest(contest) })
 }

@@ -13,7 +13,6 @@ interface Contest {
 }
 
 export default function HomePage() {
-  const [name, setName] = useState('')
   const [handle, setHandle] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
@@ -50,14 +49,13 @@ export default function HomePage() {
     const res = await fetch('/api/students', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, cf_handle: handle }),
+      body: JSON.stringify({ cf_handle: handle }),
     })
     const data = await res.json()
 
     if (res.ok) {
       setStatus('success')
-      setMessage(`Registered! Welcome, ${name}. You are all set for tonight's contest.`)
-      setName('')
+      setMessage(`Registered! ${handle} is all set for tonight's contest.`)
       setHandle('')
     } else {
       setStatus('error')
@@ -71,12 +69,6 @@ export default function HomePage() {
       minute: '2-digit',
       timeZone: CONTEST_TIME_ZONE,
     })
-  }
-
-  function cfProblemUrl(id: string) {
-    const contestId = id.replace(/[A-Z]$/, '')
-    const index = id.slice(-1)
-    return `https://codeforces.com/problemset/problem/${contestId}/${index}`
   }
 
   return (
@@ -134,21 +126,15 @@ export default function HomePage() {
                   {formatTime(contest.start_time)} – {formatTime(contest.end_time)}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {contest.problems.map((p) => (
-                  <a
-                    key={p.cf_problem_id}
-                    href={cfProblemUrl(p.cf_problem_id)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="border rounded-lg p-3 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="text-xs text-gray-400 font-medium">Problem {p.slot}</div>
-                    <div className="font-medium text-gray-800 mt-0.5 text-sm">{p.problem_name}</div>
-                    <div className="text-xs text-blue-600 mt-1">Rating {p.rating}</div>
-                  </a>
-                ))}
-              </div>
+              {contest.status === 'ACTIVE' ? (
+                <p className="text-sm text-gray-500">
+                  Problems are now live. Open the contest scoreboard to view them.
+                </p>
+              ) : (
+                <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                  Problems stay hidden until the contest starts at {formatTime(contest.start_time)}.
+                </div>
+              )}
               {contest.status === 'ACTIVE' && (
                 <Link
                   href={`/contests/${contest.id}/scoreboard`}
@@ -169,8 +155,8 @@ export default function HomePage() {
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <h2 className="text-lg font-semibold mb-1">Register</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Enter your name and Codeforces handle to participate. Registration closes 5 minutes
-            before the contest starts.
+            Enter your Codeforces handle to register. We will verify it against Codeforces before
+            adding you to the contest. Registration closes 5 minutes before the contest starts.
           </p>
 
           {status === 'success' ? (
@@ -179,17 +165,6 @@ export default function HomePage() {
             </div>
           ) : (
             <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Rahul Sharma"
-                  required
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Codeforces Handle
