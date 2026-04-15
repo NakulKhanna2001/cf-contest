@@ -22,7 +22,7 @@ export default async function ResultDetailPage({
 }) {
   const { id } = await params
   const contest = await getContest(id)
-  if (!contest) notFound()
+  if (!contest || contest.is_test) notFound()
 
   // Build scoreboard
   const studentMap = new Map<string, {

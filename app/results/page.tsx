@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 async function getPastContests() {
   return prisma.contest.findMany({
-    where: { status: 'ENDED' },
+    where: { status: 'ENDED', is_test: false },
     orderBy: { start_time: 'desc' },
     include: { problems: { orderBy: { slot: 'asc' } } },
   })

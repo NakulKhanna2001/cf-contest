@@ -1,0 +1,5 @@
+ALTER TABLE "Student"
+ADD COLUMN "is_test" BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE "Contest"
+ADD COLUMN "is_test" BOOLEAN NOT NULL DEFAULT false;

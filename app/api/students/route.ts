@@ -51,6 +51,7 @@ export async function GET() {
   }
 
   const students = await prisma.student.findMany({
+    where: { is_test: false },
     orderBy: { registered_at: 'asc' },
   })
   return Response.json(students)

@@ -4,7 +4,10 @@ import { getContestStatus } from '@/lib/contest-time'
 // GET /api/contests/active — return the current active or upcoming contest
 export async function GET() {
   const contest = await prisma.contest.findFirst({
-    where: { status: { in: ['ACTIVE', 'PENDING'] } },
+    where: {
+      status: { in: ['ACTIVE', 'PENDING'] },
+      is_test: false,
+    },
     orderBy: { start_time: 'asc' },
     include: { problems: { orderBy: { slot: 'asc' } } },
   })

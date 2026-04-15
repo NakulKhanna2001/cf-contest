@@ -34,5 +34,6 @@ export const config = {
     '/admin/dashboard/:path*',
     '/admin/settings/:path*',
     '/api/admin/settings/:path*',
+    '/api/admin/test-contests/:path*',
   ],
 }

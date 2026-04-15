@@ -18,6 +18,9 @@ export async function POST(
   })
 
   if (!contest) return Response.json({ error: 'Contest not found' }, { status: 404 })
+  if (contest.is_test) {
+    contest.status = new Date() > contest.end_time ? 'ENDED' : contest.status
+  }
 
   // Auto-end if past end_time
   if (contest.status === 'ACTIVE' && new Date() > contest.end_time) {
@@ -26,7 +29,7 @@ export async function POST(
   }
 
   // Only sync while active
-  if (contest.status === 'ACTIVE') {
+  if (contest.status === 'ACTIVE' && !contest.is_test) {
     // Group unsolved submissions by student
     type StudentEntry = { handle: string; problemIds: string[] }
     const unsolvedByStudent = new Map<string, StudentEntry>()

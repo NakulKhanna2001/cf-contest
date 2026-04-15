@@ -63,6 +63,8 @@ DATABASE_URL=
 ADMIN_PASSWORD=
 CRON_SECRET=
 NEXTAUTH_SECRET=
+ENABLE_TEST_CRON=
+TEST_CRON_SECRET=
 ```
 
 ## Local Development
@@ -126,6 +128,8 @@ npm run check
 - This repo currently stops at app and CI setup. Deployment is intentionally not wired in yet.
 - The project uses a generated Prisma client under `app/generated/prisma`, so `prisma generate` is part of install/check flows.
 - The default Next.js Turbopack build can be environment-sensitive in restricted sandboxes, so CI uses the webpack build path for stability.
+- A separate test cron route exists at `/api/cron/create-test-contest`. It is disabled unless `ENABLE_TEST_CRON=true`.
+- Seeded test contests can be cleaned up with `DELETE /api/admin/test-contests`.
 
 ## Roadmap
 

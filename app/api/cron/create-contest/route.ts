@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         start_time: startTime,
         end_time: endTime,
         status: getContestStatus(now, startTime, endTime),
+        is_test: false,
         problems: {
           create: [
             { cf_problem_id: bId, problem_name: b.name, rating: b.rating!, slot: 'B' },

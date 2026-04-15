@@ -11,6 +11,7 @@ model Student {
   id            String       @id @default(cuid())
   name          String
   cf_handle     String       @unique
+  is_test       Boolean      @default(false)
   registered_at DateTime     @default(now())
   submissions   Submission[]
 }
@@ -20,6 +21,7 @@ model Contest {
   start_time  DateTime
   end_time    DateTime
   status      ContestStatus    @default(PENDING)
+  is_test     Boolean          @default(false)
   problems    ContestProblem[]
   submissions Submission[]
   created_at  DateTime         @default(now())

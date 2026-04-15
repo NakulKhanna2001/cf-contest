@@ -17,6 +17,7 @@ export async function GET(
   })
 
   if (!contest) return Response.json({ error: 'Contest not found' }, { status: 404 })
+  if (contest.is_test) return Response.json({ error: 'Contest not found' }, { status: 404 })
 
   const studentMap = new Map<string, {
     student: { id: string; name: string; handle: string }
