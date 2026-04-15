@@ -88,12 +88,18 @@ export default function HomePage() {
             <p className="text-blue-200 text-sm mt-1">Nightly 9:30 PM – 10:30 PM IST</p>
           </div>
           <div className="flex gap-3 text-sm">
-            <Link
-              href="/scoreboard"
-              className="bg-white text-blue-700 px-3 py-1.5 rounded font-medium hover:bg-blue-50"
-            >
-              Scoreboard
-            </Link>
+            {contest ? (
+              <Link
+                href={`/contests/${contest.id}/scoreboard`}
+                className="bg-white text-blue-700 px-3 py-1.5 rounded font-medium hover:bg-blue-50"
+              >
+                Scoreboard
+              </Link>
+            ) : (
+              <span className="bg-white/20 text-white px-3 py-1.5 rounded font-medium">
+                Scoreboard
+              </span>
+            )}
             <Link
               href="/results"
               className="text-white border border-white px-3 py-1.5 rounded hover:bg-blue-600"
@@ -145,7 +151,7 @@ export default function HomePage() {
               </div>
               {contest.status === 'ACTIVE' && (
                 <Link
-                  href="/scoreboard"
+                  href={`/contests/${contest.id}/scoreboard`}
                   className="mt-4 block w-full text-center bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
                 >
                   View Live Scoreboard

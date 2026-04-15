@@ -28,7 +28,8 @@ Each night, the app can create a 1-hour contest, auto-pick two problems, track s
 
 ```text
 /                    Landing page and registration
-/scoreboard          Live contest scoreboard
+/contests/[id]/scoreboard Contest-specific scoreboard
+/scoreboard          Redirects to the current contest scoreboard
 /results             Past contests
 /results/[id]        Detailed results for one contest
 /admin               Admin login

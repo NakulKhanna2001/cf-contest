@@ -107,10 +107,10 @@ export default function AdminDashboard() {
                   {syncing ? 'Syncing…' : 'Sync Now'}
                 </button>
                 <Link
-                  href="/scoreboard"
+                  href={`/contests/${contest.id}/scoreboard`}
                   className="border px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50"
                 >
-                  Live Scoreboard
+                  Contest Scoreboard
                 </Link>
               </div>
               {syncData && (
