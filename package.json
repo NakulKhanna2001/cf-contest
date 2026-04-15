@@ -3,9 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate --schema prisma/schema.prisma",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "build:webpack": "next build --webpack",
+    "start": "next start",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run prisma:generate && npm run typecheck && npm run build:webpack"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.7.0",
