@@ -19,12 +19,27 @@ export default function HomePage() {
   const [message, setMessage] = useState('')
   const [contest, setContest] = useState<Contest | null>(null)
   const [contestLoading, setContestLoading] = useState(true)
+  const [contestError, setContestError] = useState('')
 
   useEffect(() => {
-    fetch('/api/contests/active')
-      .then((r) => r.json())
-      .then((d) => setContest(d.contest))
-      .finally(() => setContestLoading(false))
+    async function loadContest() {
+      try {
+        const res = await fetch('/api/contests/active')
+        if (!res.ok) {
+          throw new Error('Failed to load contest status')
+        }
+
+        const text = await res.text()
+        const data = text ? JSON.parse(text) : { contest: null }
+        setContest(data.contest)
+      } catch {
+        setContestError('Could not load contest status right now.')
+      } finally {
+        setContestLoading(false)
+      }
+    }
+
+    loadContest()
   }, [])
 
   async function handleRegister(e: React.FormEvent) {
@@ -95,6 +110,8 @@ export default function HomePage() {
           <h2 className="text-lg font-semibold mb-3">Tonight&apos;s Contest</h2>
           {contestLoading ? (
             <p className="text-gray-400 text-sm">Loading…</p>
+          ) : contestError ? (
+            <p className="text-red-600 text-sm">{contestError}</p>
           ) : contest ? (
             <div>
               <div className="flex items-center gap-2 mb-4">
