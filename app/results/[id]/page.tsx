@@ -28,7 +28,8 @@ export default async function ResultDetailPage({
   const studentMap = new Map<string, {
     student: { id: string; name: string; handle: string }
     solvedCount: number
-    problems: Record<string, { solved: boolean; solved_at: Date | null }>
+    penalty: number
+    problems: Record<string, { solved: boolean; solved_at: Date | null; wrong_attempts: number }>
   }>()
 
   for (const sub of contest.submissions) {
@@ -36,15 +37,27 @@ export default async function ResultDetailPage({
       studentMap.set(sub.student_id, {
         student: { id: sub.student_id, name: sub.student.name, handle: sub.student.cf_handle },
         solvedCount: 0,
+        penalty: 0,
         problems: {},
       })
     }
     const entry = studentMap.get(sub.student_id)!
-    entry.problems[sub.cf_problem_id] = { solved: sub.solved, solved_at: sub.solved_at }
-    if (sub.solved) entry.solvedCount++
+    entry.problems[sub.cf_problem_id] = {
+      solved: sub.solved,
+      solved_at: sub.solved_at,
+      wrong_attempts: sub.wrong_attempts,
+    }
+    if (sub.solved && sub.solved_at) {
+      entry.solvedCount++
+      const elapsedMin = Math.floor((sub.solved_at.getTime() - contest.start_time.getTime()) / 60000)
+      entry.penalty += elapsedMin + sub.wrong_attempts * 20
+    }
   }
 
-  const rows = Array.from(studentMap.values()).sort((a, b) => b.solvedCount - a.solvedCount)
+  const rows = Array.from(studentMap.values()).sort((a, b) => {
+    if (b.solvedCount !== a.solvedCount) return b.solvedCount - a.solvedCount
+    return a.penalty - b.penalty
+  })
 
   function elapsed(solved_at: Date) {
     const diff = Math.floor((solved_at.getTime() - contest!.start_time.getTime()) / 1000)
@@ -54,104 +67,106 @@ export default async function ResultDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="bg-blue-700 text-white py-4 px-4 shadow">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">Contest Results</h1>
-            <p className="text-blue-200 text-sm mt-0.5">
-              {new Date(contest.start_time).toLocaleDateString([], {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-                timeZone: CONTEST_TIME_ZONE,
-              })}
-            </p>
+    <main style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <nav style={{ borderBottom: '1px solid var(--border)', padding: '0 24px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+              <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 12, padding: '2px 7px', borderRadius: 4 }}>CF</span>
+            </Link>
+            <span style={{ color: 'var(--border)' }}>·</span>
+            <div>
+              <span className="font-display" style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Results</span>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 8 }}>
+                {new Date(contest.start_time).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric', timeZone: CONTEST_TIME_ZONE })}
+              </span>
+            </div>
           </div>
-          <Link href="/results" className="text-white border border-white px-3 py-1.5 rounded text-sm hover:bg-blue-600">
-            All Results
-          </Link>
+          <Link href="/results" className="nav-link">← All Results</Link>
         </div>
-      </div>
+      </nav>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
         {/* Problems */}
-        <div className="bg-white rounded-xl shadow-sm border mb-6 p-4">
-          <div className="grid grid-cols-2 gap-4">
-            {contest.problems.map((p) => (
-              <a
-                key={p.id}
-                href={`https://codeforces.com/problemset/problem/${p.cf_problem_id.replace(/[A-Z]$/, '')}/${p.cf_problem_id.slice(-1)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
-              >
-                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded">
-                  {p.slot}
-                </span>
-                <div>
-                  <div className="text-sm font-medium text-gray-800">{p.problem_name}</div>
-                  <div className="text-xs text-gray-400">Rating {p.rating}</div>
-                </div>
-              </a>
-            ))}
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${contest.problems.length}, 1fr)`, gap: 12, marginBottom: 24 }}>
+          {contest.problems.map((p) => (
+            <a
+              key={p.id}
+              href={`https://codeforces.com/problemset/problem/${p.cf_problem_id.replace(/[A-Z]$/, '')}/${p.cf_problem_id.slice(-1)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="card"
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', textDecoration: 'none', transition: 'border-color 0.15s' }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+            >
+              <span style={{ background: 'var(--accent-dim)', color: 'var(--accent)', fontFamily: 'DM Mono, monospace', fontWeight: 500, fontSize: 13, padding: '4px 10px', borderRadius: 6, flexShrink: 0 }}>
+                {p.slot}
+              </span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{p.problem_name}</div>
+                <div className="font-mono" style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{p.rating}</div>
+              </div>
+            </a>
+          ))}
         </div>
 
         {/* Results table */}
         {rows.length === 0 ? (
-          <p className="text-center text-gray-400 py-10">No participants.</p>
+          <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>No participants.</div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 w-8">#</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Student</th>
+                  <th style={{ width: 40 }}>#</th>
+                  <th>Student</th>
                   {contest.problems.map((p) => (
-                    <th key={p.id} className="text-center px-4 py-3 font-medium text-gray-500 w-28">
-                      Problem {p.slot}
-                    </th>
+                    <th key={p.id} className="text-center" style={{ width: 110 }}>Problem {p.slot}</th>
                   ))}
-                  <th className="text-center px-4 py-3 font-medium text-gray-500 w-20">Solved</th>
+                  <th className="text-center" style={{ width: 72 }}>Solved</th>
+                  <th className="text-center" style={{ width: 80 }}>Penalty</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {rows.map((row, i) => (
-                  <tr key={row.student.id} className={i === 0 ? 'bg-yellow-50' : 'hover:bg-gray-50'}>
-                    <td className="px-4 py-3 text-gray-400">{i + 1}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-800">{row.student.name}</div>
-                      <a
-                        href={`https://codeforces.com/profile/${row.student.handle}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-blue-500 hover:underline"
-                      >
+                  <tr key={row.student.id} style={i === 0 && row.solvedCount > 0 ? { background: 'rgba(52,211,153,0.04)' } : {}}>
+                    <td>
+                      <span className="font-mono" style={{ fontSize: 13, color: i < 3 ? 'var(--text-secondary)' : 'var(--text-muted)' }}>{i + 1}</span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>{row.student.name}</div>
+                      <a href={`https://codeforces.com/profile/${row.student.handle}`} target="_blank" rel="noreferrer" className="font-mono" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>
                         {row.student.handle}
                       </a>
                     </td>
                     {contest.problems.map((p) => {
                       const sub = row.problems[p.cf_problem_id]
                       return (
-                        <td key={p.id} className="px-4 py-3 text-center">
+                        <td key={p.id} className="text-center">
                           {sub?.solved ? (
-                            <div>
-                              <span className="text-green-600 font-bold text-base">✓</span>
-                              {sub.solved_at && (
-                                <div className="text-xs text-gray-400 mt-0.5">
-                                  {elapsed(sub.solved_at)}
-                                </div>
-                              )}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                              <span style={{ color: 'var(--green)', fontWeight: 700, fontSize: 15 }}>✓</span>
+                              {sub.solved_at && <span className="font-mono" style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{elapsed(sub.solved_at)}</span>}
+                              {sub.wrong_attempts > 0 && <span style={{ fontSize: 10, color: 'var(--red)', fontWeight: 600 }}>+{sub.wrong_attempts} pen</span>}
                             </div>
+                          ) : sub?.wrong_attempts > 0 ? (
+                            <span className="font-mono" style={{ color: 'var(--red)', fontWeight: 600, fontSize: 13 }}>-{sub.wrong_attempts}</span>
                           ) : (
-                            <span className="text-gray-300 text-base">–</span>
+                            <span style={{ color: 'var(--border-bright)' }}>—</span>
                           )}
                         </td>
                       )
                     })}
-                    <td className="px-4 py-3 text-center font-bold text-gray-700">
-                      {row.solvedCount}/{contest.problems.length}
+                    <td className="text-center">
+                      <span className="font-mono" style={{ fontWeight: 700, fontSize: 14, color: row.solvedCount > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                        {row.solvedCount}/{contest.problems.length}
+                      </span>
+                    </td>
+                    <td className="text-center">
+                      <span className="font-mono" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                        {row.solvedCount > 0 ? row.penalty : '—'}
+                      </span>
                     </td>
                   </tr>
                 ))}

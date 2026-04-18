@@ -1,0 +1,1 @@
+ALTER TABLE "Submission" ADD COLUMN "wrong_attempts" INTEGER NOT NULL DEFAULT 0;

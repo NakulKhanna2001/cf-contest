@@ -8,23 +8,36 @@ datasource db {
 }
 
 model Student {
-  id            String       @id @default(cuid())
+  id            String                @id @default(cuid())
   name          String
-  cf_handle     String       @unique
-  is_test       Boolean      @default(false)
-  registered_at DateTime     @default(now())
+  cf_handle     String                @unique
+  is_test       Boolean               @default(false)
+  registered_at DateTime              @default(now())
   submissions   Submission[]
+  registrations ContestRegistration[]
 }
 
 model Contest {
-  id          String           @id @default(cuid())
-  start_time  DateTime
-  end_time    DateTime
-  status      ContestStatus    @default(PENDING)
-  is_test     Boolean          @default(false)
-  problems    ContestProblem[]
-  submissions Submission[]
-  created_at  DateTime         @default(now())
+  id            String                @id @default(cuid())
+  start_time    DateTime
+  end_time      DateTime
+  status        ContestStatus         @default(PENDING)
+  is_test       Boolean               @default(false)
+  problems      ContestProblem[]
+  submissions   Submission[]
+  registrations ContestRegistration[]
+  created_at    DateTime              @default(now())
+}
+
+model ContestRegistration {
+  id            String   @id @default(cuid())
+  contest_id    String
+  student_id    String
+  registered_at DateTime @default(now())
+  contest       Contest  @relation(fields: [contest_id], references: [id])
+  student       Student  @relation(fields: [student_id], references: [id])
+
+  @@unique([contest_id, student_id])
 }
 
 model ContestProblem {
@@ -44,6 +57,7 @@ model Submission {
   cf_problem_id   String
   solved          Boolean   @default(false)
   solved_at       DateTime?
+  wrong_attempts  Int       @default(0)
   last_checked_at DateTime  @default(now())
   contest         Contest   @relation(fields: [contest_id], references: [id])
   student         Student   @relation(fields: [student_id], references: [id])

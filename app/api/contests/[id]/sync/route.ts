@@ -30,7 +30,6 @@ export async function POST(
 
   // Only sync while active
   if (contest.status === 'ACTIVE' && !contest.is_test) {
-    // Group unsolved submissions by student
     type StudentEntry = { handle: string; problemIds: string[] }
     const unsolvedByStudent = new Map<string, StudentEntry>()
 
@@ -50,29 +49,44 @@ export async function POST(
       try {
         const cfSubs = await fetchUserSubmissions(handle)
 
-        // Only count submissions made after contest start
+        // Only count submissions made during the contest window
         const solvedDuringContest = new Map<string, Date>()
+        const wrongDuringContest = new Map<string, number>()
+
         for (const s of cfSubs) {
           const submittedAt = new Date(s.creationTimeSeconds * 1000)
-          if (s.verdict === 'OK' && submittedAt >= contest.start_time) {
-            const pid = getProblemId(s.problem.contestId, s.problem.index)
+          if (submittedAt < contest.start_time || submittedAt > contest.end_time) continue
+
+          const pid = getProblemId(s.problem.contestId, s.problem.index)
+          if (!problemIds.includes(pid)) continue
+
+          if (s.verdict === 'OK') {
             if (!solvedDuringContest.has(pid)) {
               solvedDuringContest.set(pid, submittedAt)
             }
+          } else if (s.verdict !== 'TESTING' && s.verdict !== 'SKIPPED') {
+            wrongDuringContest.set(pid, (wrongDuringContest.get(pid) ?? 0) + 1)
           }
         }
 
         for (const problemId of problemIds) {
           const solvedAt = solvedDuringContest.get(problemId)
+          const wrongs = wrongDuringContest.get(problemId) ?? 0
+
           if (solvedAt) {
             await prisma.submission.updateMany({
               where: { contest_id: id, student_id: studentId, cf_problem_id: problemId },
-              data: { solved: true, solved_at: solvedAt, last_checked_at: new Date() },
+              data: {
+                solved: true,
+                solved_at: solvedAt,
+                wrong_attempts: wrongs,
+                last_checked_at: new Date(),
+              },
             })
           } else {
             await prisma.submission.updateMany({
               where: { contest_id: id, student_id: studentId, cf_problem_id: problemId },
-              data: { last_checked_at: new Date() },
+              data: { wrong_attempts: wrongs, last_checked_at: new Date() },
             })
           }
         }
@@ -93,14 +107,18 @@ export async function POST(
   const studentMap = new Map<string, {
     student: { id: string; name: string; handle: string }
     solvedCount: number
-    problems: Record<string, { solved: boolean; solved_at: string | null }>
+    penalty: number
+    problems: Record<string, { solved: boolean; solved_at: string | null; wrong_attempts: number }>
   }>()
+
+  const contestStart = contest.start_time
 
   for (const sub of submissions) {
     if (!studentMap.has(sub.student_id)) {
       studentMap.set(sub.student_id, {
         student: { id: sub.student_id, name: sub.student.name, handle: sub.student.cf_handle },
         solvedCount: 0,
+        penalty: 0,
         problems: {},
       })
     }
@@ -108,13 +126,22 @@ export async function POST(
     entry.problems[sub.cf_problem_id] = {
       solved: sub.solved,
       solved_at: sub.solved_at ? sub.solved_at.toISOString() : null,
+      wrong_attempts: sub.wrong_attempts,
     }
-    if (sub.solved) entry.solvedCount++
+    if (sub.solved && sub.solved_at) {
+      entry.solvedCount++
+      const elapsedMinutes = Math.floor(
+        (sub.solved_at.getTime() - contestStart.getTime()) / 60000
+      )
+      entry.penalty += elapsedMinutes + sub.wrong_attempts * 20
+    }
   }
 
-  const scoreboard = Array.from(studentMap.values()).sort(
-    (a, b) => b.solvedCount - a.solvedCount
-  )
+  // Sort: most solved first, then least penalty
+  const scoreboard = Array.from(studentMap.values()).sort((a, b) => {
+    if (b.solvedCount !== a.solvedCount) return b.solvedCount - a.solvedCount
+    return a.penalty - b.penalty
+  })
 
   return Response.json({
     contest: {

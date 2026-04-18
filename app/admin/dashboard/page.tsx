@@ -158,7 +158,7 @@ export default function AdminDashboard() {
                           {s.cf_handle}
                         </a>
                       </td>
-                      <td className="px-3 py-2 text-gray-400">
+                      <td className="px-3 py-2 text-gray-600">
                         {new Date(s.registered_at).toLocaleDateString()}
                       </td>
                     </tr>
