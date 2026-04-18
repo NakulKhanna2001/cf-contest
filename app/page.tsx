@@ -133,7 +133,7 @@ export default function HomePage() {
             </span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            {contest ? (
+            {contest?.status === 'ACTIVE' ? (
               <Link href={`/contests/${contest.id}/scoreboard`} className="nav-link nav-link-primary">
                 Live Scoreboard
               </Link>
@@ -245,7 +245,37 @@ export default function HomePage() {
               Register
             </p>
 
-            {status === 'success' ? (
+            {contestLoading ? (
+              <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</div>
+            ) : !contest ? (
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                No upcoming contest. Registration opens after 10:30 PM.
+              </p>
+            ) : contest.status === 'ACTIVE' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Registration is closed — the contest is live.
+                </p>
+                <Link
+                  href={`/contests/${contest.id}/scoreboard`}
+                  style={{
+                    display: 'block',
+                    background: 'var(--green-dim)',
+                    color: 'var(--green)',
+                    border: '1px solid rgba(52,211,153,0.25)',
+                    borderRadius: 8,
+                    padding: '10px 0',
+                    textAlign: 'center',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  View Live Scoreboard →
+                </Link>
+              </div>
+            ) : status === 'success' ? (
               <div style={{
                 background: 'var(--green-dim)',
                 border: '1px solid rgba(52,211,153,0.2)',
