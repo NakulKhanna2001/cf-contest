@@ -13,9 +13,9 @@ export async function POST(request: NextRequest) {
   const now = new Date()
   const { startTime, endTime, dayStartUtc, dayEndUtc } = getTomorrowContestWindow(now)
 
-  // Idempotent — skip if a contest already exists for tomorrow's window
+  // Idempotent — skip if a non-test contest already exists for tomorrow's window
   const existing = await prisma.contest.findFirst({
-    where: { start_time: { gte: dayStartUtc, lt: dayEndUtc } },
+    where: { start_time: { gte: dayStartUtc, lt: dayEndUtc }, is_test: false },
   })
   if (existing) {
     return Response.json({ message: 'Contest already exists for tomorrow', id: existing.id })

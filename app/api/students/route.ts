@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   const cutoff = new Date(contest.start_time.getTime() - 5 * 60 * 1000)
   if (new Date() >= cutoff) {
     return Response.json(
-      { error: 'Registration is closed — contest starts in less than 5 minutes' },
+      { error: 'Registration is closed — contest starts in less than 5 minutes.' },
       { status: 400 }
     )
   }

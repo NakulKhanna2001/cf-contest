@@ -73,10 +73,10 @@ model UsedProblem {
 
 model AppSettings {
   id              String @id @default("singleton")
-  b_rating_min    Int    @default(1200)
-  b_rating_max    Int    @default(1600)
-  c_rating_min    Int    @default(1400)
-  c_rating_max    Int    @default(1700)
+  b_rating_min    Int    @default(1000)
+  b_rating_max    Int    @default(1300)
+  c_rating_min    Int    @default(1300)
+  c_rating_max    Int    @default(1600)
   poll_interval_s Int    @default(30)
 }
 

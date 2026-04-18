@@ -132,16 +132,7 @@ export default function HomePage() {
               Practice Arena
             </span>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {contest?.status === 'ACTIVE' ? (
-              <Link href={`/contests/${contest.id}/scoreboard`} className="nav-link nav-link-primary">
-                Live Scoreboard
-              </Link>
-            ) : (
-              <span className="nav-link" style={{ opacity: 0.4, cursor: 'default' }}>Scoreboard</span>
-            )}
-            <Link href="/results" className="nav-link">Past Results</Link>
-          </div>
+          <Link href="/results" className="nav-link">Past Results</Link>
         </div>
       </nav>
 
@@ -345,8 +336,8 @@ export default function HomePage() {
           gap: 32,
         }}>
           {[
-            { label: 'Problem B', value: '1200–1600 rating' },
-            { label: 'Problem C', value: '1400–1700 rating' },
+            { label: 'Problem B', value: '1000–1300 rating' },
+            { label: 'Problem C', value: '1300–1600 rating' },
             { label: 'Duration', value: '60 minutes' },
           ].map((item) => (
             <div key={item.label}>
