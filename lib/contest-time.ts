@@ -101,6 +101,11 @@ export function getTodayContestWindow(now = new Date()) {
   }
 }
 
+export function getTomorrowContestWindow(now = new Date()) {
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+  return getTodayContestWindow(tomorrow)
+}
+
 export function getContestStatus(now: Date, startTime: Date, endTime: Date) {
   if (now >= endTime) return 'ENDED'
   if (now >= startTime) return 'ACTIVE'
