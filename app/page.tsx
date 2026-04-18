@@ -12,6 +12,43 @@ interface Contest {
   problems: { slot: string; problem_name: string; cf_problem_id: string; rating: number }[]
 }
 
+function ContestCountdown({ targetTime, label }: { targetTime: string; label: string }) {
+  const [display, setDisplay] = useState('')
+  const [urgent, setUrgent] = useState(false)
+
+  useEffect(() => {
+    function tick() {
+      const diff = Math.max(0, new Date(targetTime).getTime() - Date.now())
+      const h = Math.floor(diff / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      setDisplay(h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`)
+      setUrgent(diff < 600000)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [targetTime])
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{label}</p>
+      <span className="font-mono" style={{ fontSize: 24, fontWeight: 700, color: urgent ? 'var(--red)' : 'var(--accent)' }}>
+        {display}
+      </span>
+    </div>
+  )
+}
+
+function contestLabel(startIso: string): string {
+  const start = new Date(startIso)
+  const now = new Date()
+  const startIST = new Date(start.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+  const nowIST = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+  const isTomorrow = startIST.getDate() !== nowIST.getDate()
+  return isTomorrow ? 'Tomorrow' : 'Tonight'
+}
+
 export default function HomePage() {
   const [handle, setHandle] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -24,20 +61,16 @@ export default function HomePage() {
     async function loadContest() {
       try {
         const res = await fetch('/api/contests/active')
-        if (!res.ok) {
-          throw new Error('Failed to load contest status')
-        }
-
+        if (!res.ok) throw new Error('failed')
         const text = await res.text()
         const data = text ? JSON.parse(text) : { contest: null }
         setContest(data.contest)
       } catch {
-        setContestError('Could not load contest status right now.')
+        setContestError('Could not load contest status.')
       } finally {
         setContestLoading(false)
       }
     }
-
     loadContest()
   }, [])
 
@@ -45,17 +78,15 @@ export default function HomePage() {
     e.preventDefault()
     setStatus('loading')
     setMessage('')
-
     const res = await fetch('/api/students', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cf_handle: handle }),
     })
     const data = await res.json()
-
     if (res.ok) {
       setStatus('success')
-      setMessage(`Registered! ${handle} is all set for tonight's contest.`)
+      setMessage(`${handle} is registered for tonight's contest.`)
       setHandle('')
     } else {
       setStatus('error')
@@ -72,122 +103,227 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="bg-blue-700 text-white py-6 px-4 shadow">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">CF Practice Contest</h1>
-            <p className="text-blue-200 text-sm mt-1">Nightly 9:30 PM – 10:30 PM IST</p>
+    <main style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      {/* Nav */}
+      <nav style={{
+        borderBottom: '1px solid var(--border)',
+        padding: '0 24px',
+      }}>
+        <div style={{
+          maxWidth: 760,
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          height: 56,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              background: 'var(--accent)',
+              color: '#fff',
+              fontFamily: 'Syne, sans-serif',
+              fontWeight: 800,
+              fontSize: 13,
+              padding: '3px 8px',
+              borderRadius: 5,
+              letterSpacing: '0.02em',
+            }}>CF</span>
+            <span className="font-display" style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
+              Practice Arena
+            </span>
           </div>
-          <div className="flex gap-3 text-sm">
+          <div style={{ display: 'flex', gap: 8 }}>
             {contest ? (
-              <Link
-                href={`/contests/${contest.id}/scoreboard`}
-                className="bg-white text-blue-700 px-3 py-1.5 rounded font-medium hover:bg-blue-50"
-              >
-                Scoreboard
+              <Link href={`/contests/${contest.id}/scoreboard`} className="nav-link nav-link-primary">
+                Live Scoreboard
               </Link>
             ) : (
-              <span className="bg-white/20 text-white px-3 py-1.5 rounded font-medium">
-                Scoreboard
-              </span>
+              <span className="nav-link" style={{ opacity: 0.4, cursor: 'default' }}>Scoreboard</span>
             )}
-            <Link
-              href="/results"
-              className="text-white border border-white px-3 py-1.5 rounded hover:bg-blue-600"
-            >
-              Past Results
-            </Link>
+            <Link href="/results" className="nav-link">Past Results</Link>
           </div>
         </div>
-      </div>
+      </nav>
 
-      <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
-        {/* Tonight's contest */}
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <h2 className="text-lg font-semibold mb-3">Tonight&apos;s Contest</h2>
-          {contestLoading ? (
-            <p className="text-gray-400 text-sm">Loading…</p>
-          ) : contestError ? (
-            <p className="text-red-600 text-sm">{contestError}</p>
-          ) : contest ? (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <span
-                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    contest.status === 'ACTIVE'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                  }`}
-                >
-                  {contest.status === 'ACTIVE' ? 'LIVE NOW' : 'Upcoming'}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {formatTime(contest.start_time)} – {formatTime(contest.end_time)}
-                </span>
-              </div>
-              {contest.status === 'ACTIVE' ? (
-                <p className="text-sm text-gray-500">
-                  Problems are now live. Open the contest scoreboard to view them.
-                </p>
-              ) : (
-                <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
-                  Problems stay hidden until the contest starts at {formatTime(contest.start_time)}.
-                </div>
-              )}
-              {contest.status === 'ACTIVE' && (
-                <Link
-                  href={`/contests/${contest.id}/scoreboard`}
-                  className="mt-4 block w-full text-center bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
-                >
-                  View Live Scoreboard
-                </Link>
-              )}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-sm">
-              No contest yet — problems are selected automatically at 9:30 PM.
-            </p>
-          )}
+      {/* Hero */}
+      <div style={{
+        maxWidth: 760,
+        margin: '0 auto',
+        padding: '48px 24px 0',
+      }}>
+        <div style={{ marginBottom: 40 }}>
+          <p className="font-mono" style={{ color: 'var(--accent)', fontSize: 12, letterSpacing: '0.1em', marginBottom: 10 }}>
+            NIGHTLY · 9:30 PM – 10:30 PM IST
+          </p>
+          <h1 className="font-display" style={{ fontSize: 36, fontWeight: 800, lineHeight: 1.15, color: 'var(--text-primary)', margin: 0 }}>
+            Tonight&apos;s Contest
+          </h1>
         </div>
 
-        {/* Registration */}
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <h2 className="text-lg font-semibold mb-1">Register</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Enter your Codeforces handle to register. We will verify it against Codeforces before
-            adding you to the contest. Registration closes 5 minutes before the contest starts.
-          </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {/* Contest status card */}
+          <div className="card" style={{ padding: 24 }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 16 }}>
+              Contest Status
+            </p>
 
-          {status === 'success' ? (
-            <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 text-sm">
-              {message}
-            </div>
-          ) : (
-            <form onSubmit={handleRegister} className="space-y-4">
+            {contestLoading ? (
+              <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</div>
+            ) : contestError ? (
+              <div style={{ color: 'var(--red)', fontSize: 13 }}>{contestError}</div>
+            ) : contest ? (
+              contest.status === 'ACTIVE' ? (
+                <div>
+                  <div style={{ marginBottom: 16 }}>
+                    <span className="badge-live">LIVE NOW</span>
+                  </div>
+                  <div className="font-mono" style={{ fontSize: 22, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
+                    {formatTime(contest.start_time)}
+                    <span style={{ color: 'var(--text-muted)', margin: '0 8px', fontWeight: 400 }}>→</span>
+                    {formatTime(contest.end_time)}
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 12 }}>
+                    Problems are live — check the scoreboard.
+                  </p>
+                  <Link
+                    href={`/contests/${contest.id}/scoreboard`}
+                    style={{
+                      display: 'block',
+                      marginTop: 16,
+                      background: 'var(--green-dim)',
+                      color: 'var(--green)',
+                      border: '1px solid rgba(52,211,153,0.25)',
+                      borderRadius: 8,
+                      padding: '8px 0',
+                      textAlign: 'center',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    View Live Scoreboard →
+                  </Link>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ marginBottom: 16 }}>
+                    <span className="badge-upcoming">UPCOMING</span>
+                  </div>
+                  <div className="font-mono" style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
+                    {contestLabel(contest.start_time)} · {formatTime(contest.start_time)} – {formatTime(contest.end_time)}
+                  </div>
+                  <ContestCountdown
+                    targetTime={contest.start_time}
+                    label="Contest starts in"
+                  />
+                  <div style={{
+                    marginTop: 14,
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    border: '1px dashed var(--border-bright)',
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                  }}>
+                    Problems are revealed at {formatTime(contest.start_time)}.
+                  </div>
+                </div>
+              )
+            ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Codeforces Handle
-                </label>
-                <input
-                  type="text"
-                  value={handle}
-                  onChange={(e) => setHandle(e.target.value)}
-                  placeholder="e.g. tourist"
-                  required
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🌙</div>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  No contest yet. Problems are auto-selected at 9:30 PM.
+                </p>
               </div>
-              {status === 'error' && <p className="text-red-600 text-sm">{message}</p>}
-              <button
-                type="submit"
-                disabled={status === 'loading'}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-              >
-                {status === 'loading' ? 'Registering…' : 'Register'}
-              </button>
-            </form>
-          )}
+            )}
+          </div>
+
+          {/* Registration card */}
+          <div className="card" style={{ padding: 24 }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 16 }}>
+              Register
+            </p>
+
+            {status === 'success' ? (
+              <div style={{
+                background: 'var(--green-dim)',
+                border: '1px solid rgba(52,211,153,0.2)',
+                borderRadius: 8,
+                padding: '14px 16px',
+                color: 'var(--green)',
+                fontSize: 13,
+                fontWeight: 500,
+                lineHeight: 1.5,
+              }}>
+                <div style={{ fontSize: 18, marginBottom: 6 }}>✓</div>
+                {message}
+              </div>
+            ) : (
+              <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--text-secondary)',
+                    marginBottom: 6,
+                  }}>
+                    Codeforces Handle
+                  </label>
+                  <input
+                    type="text"
+                    value={handle}
+                    onChange={(e) => setHandle(e.target.value)}
+                    placeholder="e.g. tourist"
+                    required
+                    className="input-field"
+                  />
+                </div>
+
+                {status === 'error' && (
+                  <div style={{
+                    background: 'var(--red-dim)',
+                    border: '1px solid rgba(248,113,113,0.2)',
+                    borderRadius: 6,
+                    padding: '8px 12px',
+                    color: 'var(--red)',
+                    fontSize: 12,
+                  }}>
+                    {message}
+                  </div>
+                )}
+
+                <button type="submit" disabled={status === 'loading'} className="btn-primary">
+                  {status === 'loading' ? 'Verifying…' : 'Register for Tonight'}
+                </button>
+
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 2 }}>
+                  Registration closes 5 min before start · Register each night
+                </p>
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <div style={{
+          marginTop: 32,
+          paddingTop: 24,
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          gap: 32,
+        }}>
+          {[
+            { label: 'Problem B', value: '1200–1600 rating' },
+            { label: 'Problem C', value: '1400–1700 rating' },
+            { label: 'Duration', value: '60 minutes' },
+          ].map((item) => (
+            <div key={item.label}>
+              <p className="font-mono" style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 3 }}>{item.label}</p>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>{item.value}</p>
+            </div>
+          ))}
         </div>
       </div>
     </main>
