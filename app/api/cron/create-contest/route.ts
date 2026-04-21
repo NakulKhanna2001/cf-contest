@@ -24,26 +24,29 @@ export async function POST(request: NextRequest) {
   const usedProblems = await prisma.usedProblem.findMany({ select: { cf_problem_id: true } })
   const usedIds = new Set(usedProblems.map((p) => p.cf_problem_id))
 
-  // Pick 2 problems
-  const { b, c } = await pickProblems([], usedIds, settings)
-  const bId = getProblemId(b.contestId, b.index)
-  const cId = getProblemId(c.contestId, c.index)
-
-  // Check for an existing PENDING shell for today
+  // Collect handles of students registered for today's contest
   const shell = await prisma.contest.findFirst({
     where: {
       start_time: { gte: dayStartUtc, lt: dayEndUtc },
       status: 'PENDING',
       is_test: false,
     },
+    include: {
+      registrations: { include: { student: { select: { cf_handle: true } } } },
+    },
   })
+  const registeredHandles = shell
+    ? shell.registrations.map((r) => r.student.cf_handle)
+    : []
+
+  // Pick 2 problems, filtering out those already solved by registered students
+  const { b, c } = await pickProblems(registeredHandles, usedIds, settings)
+  const bId = getProblemId(b.contestId, b.index)
+  const cId = getProblemId(c.contestId, c.index)
 
   if (shell) {
     // Phase 2: fill the shell with problems and activate it
-    const registrations = await prisma.contestRegistration.findMany({
-      where: { contest_id: shell.id },
-      select: { student_id: true },
-    })
+    const registrations = shell.registrations.map((r) => ({ student_id: r.student_id }))
 
     const contest = await prisma.$transaction(async (tx) => {
       // Insert problems
