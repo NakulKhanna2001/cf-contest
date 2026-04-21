@@ -65,10 +65,7 @@ export default async function ResultsPage() {
                   justifyContent: 'space-between',
                   padding: '16px 20px',
                   textDecoration: 'none',
-                  transition: 'border-color 0.15s',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <span className="font-mono" style={{ fontSize: 12, color: 'var(--text-muted)', width: 24, textAlign: 'right' }}>

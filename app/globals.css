@@ -3,23 +3,23 @@
 @import "tailwindcss";
 
 :root {
-  --bg:             #0c0e14;
-  --surface:        #13161e;
-  --surface-raised: #1a1e2a;
-  --border:         #252934;
-  --border-bright:  #363d52;
-  --text-primary:   #eef0f6;
-  --text-secondary: #8892a4;
-  --text-muted:     #5c6478;
-  --accent:         #4f8ef7;
-  --accent-hover:   #3a7bf5;
-  --accent-dim:     #1a2d52;
-  --green:          #34d399;
-  --green-dim:      #0a3326;
-  --red:            #f87171;
-  --red-dim:        #3b1111;
-  --yellow:         #fbbf24;
-  --yellow-dim:     #3b2800;
+  --bg:             #f8f9fb;
+  --surface:        #ffffff;
+  --surface-raised: #f0f1f4;
+  --border:         #e2e4ea;
+  --border-bright:  #cdd1da;
+  --text-primary:   #1a1d26;
+  --text-secondary: #555d6e;
+  --text-muted:     #8892a4;
+  --accent:         #3b7cf5;
+  --accent-hover:   #2a6ae0;
+  --accent-dim:     #e8f0fe;
+  --green:          #16a362;
+  --green-dim:      #e6f7ef;
+  --red:            #dc3545;
+  --red-dim:        #fde8ea;
+  --yellow:         #d97706;
+  --yellow-dim:     #fef3e2;
 }
 
 * {
@@ -28,6 +28,7 @@
 
 html {
   background: var(--bg);
+  color-scheme: light;
 }
 
 body {
@@ -62,6 +63,11 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
+  transition: border-color 0.15s;
+}
+
+a.card:hover {
+  border-color: var(--accent);
 }
 
 /* Input */

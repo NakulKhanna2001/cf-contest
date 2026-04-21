@@ -96,9 +96,7 @@ export default async function ResultDetailPage({
               target="_blank"
               rel="noreferrer"
               className="card"
-              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', textDecoration: 'none', transition: 'border-color 0.15s' }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', textDecoration: 'none' }}
             >
               <span style={{ background: 'var(--accent-dim)', color: 'var(--accent)', fontFamily: 'DM Mono, monospace', fontWeight: 500, fontSize: 13, padding: '4px 10px', borderRadius: 6, flexShrink: 0 }}>
                 {p.slot}
