@@ -1,6 +1,8 @@
 {
   "name": "cf-contest",
   "version": "0.1.0",
+  "description": "Nightly Codeforces practice contest platform with auto problem selection, ICPC scoring, and live scoreboards",
+  "author": "NakulKhanna2001",
   "private": true,
   "scripts": {
     "postinstall": "prisma generate --schema prisma/schema.prisma",
